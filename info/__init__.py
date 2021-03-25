@@ -4,7 +4,7 @@ from flask_session import Session
 from flask_wtf.csrf import CSRFProtect
 from config import config_dict
 from flask import Flask
-
+from  info.modules.index import index_blue
 def create_app(config_name):
     app = Flask(__name__)
 
@@ -20,4 +20,7 @@ def create_app(config_name):
     Session(app)
 
     CSRFProtect(app)
+
+    app.register_blueprint(index_blue)
+
     return app
