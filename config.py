@@ -8,7 +8,7 @@ class Config(object):
     DEBUG = True
     SECRET_KEY = "fsfssfs"
 
-    SQLALCHEMY_DATABASE_URI = "mysql://root:mysql@127.0.0.1/info36"
+    SQLALCHEMY_DATABASE_URI = "mysql+pymysql://root:123456@127.0.0.1/info36"
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
     REDIS_HOST = "127.0.0.1"
