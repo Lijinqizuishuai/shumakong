@@ -1,6 +1,7 @@
 from . import index_blue
-from ... import redis_store
+from info import redis_store
 import logging
+from flask import render_template, current_app
 
 @index_blue.route('/',methods=["GET","POST"])
 def hello_world():
@@ -17,4 +18,9 @@ def hello_world():
     logging.error("输出错误信息")
 
 
-    return "helloworld"
+    return render_template("news/index.html")
+
+#处理网站logo
+@index_blue.route('/favicon.ico')
+def get_web_logo():
+    return current_app.send_static_file('news/favicon.ico')
