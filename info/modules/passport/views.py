@@ -2,26 +2,75 @@ import random
 
 from flask import request, current_app, make_response, jsonify
 
+from ...models import User
+from ...utils.response_code import RET
 from . import passport_blue
 import re
-from ... import redis_store, constants
+from ... import redis_store, constants, db
 from ...libs.yuntongxun import SmsSDK
 from ...utils.captcha.captcha import captcha
 import json
 
+# 注册用户
+# 请求方式：POST
+# 请求路径：/passport/register
+# 请求参数：mobile,sms_code,password
+# 返回值：errno,errmsg
+@passport_blue.route('/register',methods=['POST'])
+def register():
+    # 获取参数
+    json_date = request.data
+    dict_date = json.loads(json_date)
+    mobile = dict_date.get("mobile")
+    sms_code = dict_date.get("sms_code")
+    password = dict_date.get("password")
+    # 校验参数，为空校验
+    if not all([mobile,sms_code,password]):
+        return jsonify(errno=RET.PARAMERR,errmsg="参数不全")
+    # 手机号作为key取出redis中的短信验证码
+    try:
+        redis_sms_code = redis_store.get("sms_code:%s"%mobile)
+    except Exception as e:
+        current_app.logger.error(e)
+        return jsonify(errno=RET.DBERR,errmsg="短信验证码取出失败")
+    # 判断短信验证码是否过期
+    if not redis_sms_code:
+        return jsonify(errno=RET.NODATA,errmsg="短信验证码过期")
+    # 判断短信验证码是否正确
+    if redis_sms_code!=sms_code:
+        return jsonify(errno=RET.DATAERR,errmsg="短信验证码填写错误")
+    # 删除短信验证码
+    try:
+        redis_store.delete("sms_code:%s"%mobile)
+    except Exception as e:
+        current_app.logger.error(e)
+        return jsonify(errno=RET.DBERR,errmsg="短信验证码删除失败")
+    # 创建用户对象
+    user = User()
+    # 设置用户对象属性
+    user.nick_name = mobile
+    user.password_hash = password
+    user.mobile = mobile
+    user.signature = "该用户很懒，什么都没写"
+
+    # 保存用户到数据库
+    try:
+        db.session.add(user)
+        db.session.commit()
+    except Exception as e:
+        current_app.logger.error(e)
+        return jsonify(errno=RET.DBERR,errmsg="用户注册失败")
+    # 返回响应
+    return jsonify(errno=RET.OK,errmsg="注册成功")
 # 获取短信验证码
 # 请求路径：/passport/sms_code
 # 请求方式：POST
 # 请求参数：mobile，image_code,image_code_id
 # 返回值：errno，errmsg
-from ...utils.response_code import RET
-
-
 @passport_blue.route('/sms_code', methods=['POST'])
 def sms_code():
     #     获取参数
-    json_data = request.data
-    dict_data = json.loads(json_data)
+    dict_data = request.json
     mobile = dict_data.get("mobile")
     image_code = dict_data.get("image_code")
     image_code_id = dict_data.get("image_code_id")
@@ -49,14 +98,18 @@ def sms_code():
         redis_store.delete("image_code:%s"%image_code_id)
     except Exception as e:
         return jsonify(errno=RET.DBERR,errmsg="删除redis图片验证码失败")
+    sms_code = "%06d" % random.randint(0, 999999)
+    """
     accId = '8a216da878005a8001788757c21632b5'
     accToken = '2ed3c4b28e734a4186d923e9f8d80727'
     appId = '8a216da878005a8001788757c3f432bb'
     sms = SmsSDK(accId,accToken,appId)
-    sms_code = "%06d"%random.randint(0,999999)
+    
     result = sms.sendMessage('1','17721235356',(sms_code, constants.SMS_CODE_REDIS_EXPIRES/60))
     if result == -1:
         return jsonify(errno=30000, errmsg="短信发送失败")
+    """
+    print(sms_code)
     # 将短信保存到redis
     try:
         redis_store.set("sms_code:%s"%mobile,sms_code,constants.SMS_CODE_REDIS_EXPIRES)
