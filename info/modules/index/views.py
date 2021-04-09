@@ -1,24 +1,29 @@
 from . import index_blue
 from info import redis_store
 import logging
-from flask import render_template, current_app
+from flask import render_template, current_app, session
+
+from ...models import User
+
 
 @index_blue.route('/',methods=["GET","POST"])
 def hello_world():
-    redis_store.set("name","laowang")
-    print(redis_store.get("name"))
-    #
-    # session["name"] = "zhangsan"
-    # print(session.get("name"))
+    # 获取用户的登录信息
+    user_id = session.get("user_id")
 
-    #使用日志记录方法loggin进行输出可控
-    logging.debug("输出调试信息")
-    logging.info("输出详细信息")
-    logging.warning("输出警告信息")
-    logging.error("输出错误信息")
+    # 通过user_id取出用户对象
+    user = None
+    if user_id:
+        try:
+            user=User.query.get(user_id)
+        except Exception as e:
+            current_app.logger.error(e)
+    # 拼接用户数据，渲染页面
+    data = {
+        "user_info":user.to_dict() if user else ""
+    }
 
-
-    return render_template("news/index.html")
+    return render_template("news/index.html",data=data)
 
 #处理网站logo
 @index_blue.route('/favicon.ico')

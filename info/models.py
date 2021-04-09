@@ -28,6 +28,7 @@ tb_user_follows = db.Table(
 
 class User(BaseModel, db.Model):
     """用户"""
+
     __tablename__ = "info_user"
 
     id = db.Column(db.Integer, primary_key=True)  # 用户编号
