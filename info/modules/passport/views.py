@@ -1,4 +1,5 @@
 import random
+from datetime import datetime
 
 from flask import request, current_app, make_response, jsonify, session
 from info import models
@@ -11,6 +12,17 @@ from ...libs.yuntongxun import SmsSDK
 from ...utils.captcha.captcha import captcha
 import json
 
+# 退出登录
+# 请求路径：/passport/logout
+# 请求方式：POST
+# 请求参数：无
+# 返回值：errno,errmsg
+@passport_blue.route('/logout',methods=['POST'])
+def logout():
+    # 清除session信息
+    session.pop("user_id",None)
+    # 返回响应
+    return jsonify(errno=RET.OK,errmsg="退出成功")
 
 # 登录用户
 # 请求方式：POST
@@ -41,6 +53,12 @@ def login():
         return jsonify(errno=RET.DATAERR, errmsg="密码错误")
     # 将用户的登录信息保存在session中
     session["user_id"] = user.id
+    # 记录用户最后一次的登陆时间
+    user.last_login = datetime.now()
+    try:
+        db.session.commit()
+    except Exception as e:
+        current_app.logger.error(e)
     # 返回响应
     return jsonify(errno=RET.OK, errmsg="登陆成功")
 
