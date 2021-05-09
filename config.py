@@ -10,6 +10,7 @@ class Config(object):
 
     SQLALCHEMY_DATABASE_URI = "mysql+pymysql://root:123456@127.0.0.1/info36"
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+    SQLALCHEMY_COMMIT_ON_TEARDOWN = True #每当改变数据的内容之后，在视图函数结束的时候都会自动提交
 
     REDIS_HOST = "127.0.0.1"
     REDIS_PORT = 6379

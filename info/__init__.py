@@ -4,12 +4,14 @@ from logging.handlers import RotatingFileHandler
 from flask_sqlalchemy import SQLAlchemy
 from redis import StrictRedis
 from flask_session import Session
-from flask_wtf.csrf import CSRFProtect
+from flask_wtf.csrf import CSRFProtect,generate_csrf
 from config import config_dict
 from flask import Flask
 
 
 #定义redis——store变量
+from info.utils.commons import hot_news_filter
+
 redis_store = None
 
 #定义db的变量
@@ -42,15 +44,35 @@ def create_app(config_name):
     Session(app)
 
     # 使用CSRFProtect保护app
-    # CSRFProtect(app)
+    CSRFProtect(app)
 
     # 将首页蓝图index_blue，注册到app中
     from info.modules.index import index_blue
     app.register_blueprint(index_blue)
 
+
+
     # 将认证蓝图passport_blue，注册到app中
     from info.modules.passport import passport_blue
     app.register_blueprint(passport_blue)
+
+    # 将新闻蓝图news_blue，注册到app中
+    from info.modules.news import news_blue
+    app.register_blueprint(news_blue)
+
+    # 将函数添加到系统默认的过滤器列表中
+    app.add_template_filter(hot_news_filter,"my_filter")
+
+    # 使用请求钩子拦截所有的请求，统一的在cookie中设置csrf_token
+    @app.after_request
+    def after_request(resp):
+        #  调用系统方法，获取csrf_token()
+        csrf_token=generate_csrf()
+        # 将csrf_token设置到cookie中
+        resp.set_cookie("csrf_token",csrf_token)
+        return resp
+
+
 
     print(app.url_map)
     return app

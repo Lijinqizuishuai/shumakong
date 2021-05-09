@@ -39,9 +39,9 @@ def login():
         return jsonify(errno=RET.PARAMERR, errmsg="参数不全")
     # 通过用户手机号，到数据库查询用户对象
     try:
-        print("sss")
+
         user = User.query.filter(User.mobile == mobile).first()
-        print("sss")
+
     except Exception as e:
         current_app.logger.error(e)
         return jsonify(errno=RET.DBERR, errmsg="获取用户失败")
@@ -55,10 +55,10 @@ def login():
     session["user_id"] = user.id
     # 记录用户最后一次的登陆时间
     user.last_login = datetime.now()
-    try:
-        db.session.commit()
-    except Exception as e:
-        current_app.logger.error(e)
+    # try:
+    #     db.session.commit()
+    # except Exception as e:
+    #     current_app.logger.error(e)
     # 返回响应
     return jsonify(errno=RET.OK, errmsg="登陆成功")
 
