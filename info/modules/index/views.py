@@ -1,9 +1,10 @@
 from . import index_blue
 from info import redis_store
 import logging
-from flask import render_template, current_app, session, jsonify, request
+from flask import render_template, current_app, session, jsonify, request, g
 
 from ...models import User, News, Category
+from ...utils.commons import user_login_data
 from ...utils.response_code import RET
 
 @index_blue.route('/newslist')
@@ -43,18 +44,19 @@ def newslist():
     # 携带数据，返回响应
     return  jsonify(errno=RET.OK,errmsg="获取新闻成功",totalPage=totalPage,currentPage=currentPage,newsList=news_list)
 @index_blue.route('/',methods=["GET","POST"])
+@user_login_data
 def show_index():
-    # 获取用户的登录信息
-    user_id = session.get("user_id")
-
-    # 通过user_id取出用户对象
-    user = None
-    if user_id:
-        try:
-            user=User.query.get(user_id)
-            print(user)
-        except Exception as e:
-            current_app.logger.error(e)
+    # # 获取用户的登录信息
+    # user_id = session.get("user_id")
+    #
+    # # 通过user_id取出用户对象
+    # user = None
+    # if user_id:
+    #     try:
+    #         user=User.query.get(user_id)
+    #         print(user)
+    #     except Exception as e:
+    #         current_app.logger.error(e)
 
 
     # 查询热门新闻，根据点击量，查询前十条新闻
@@ -82,7 +84,7 @@ def show_index():
 
     # 拼接用户数据，渲染页面
     data = {
-        "user_info":user.to_dict() if user else "",
+        "user_info":g.user.to_dict() if g.user else "",
         "news":news_list,
         "category_list":category_list
     }
