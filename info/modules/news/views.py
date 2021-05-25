@@ -12,6 +12,42 @@ from ...models import News, User, Comment, CommentLike
 from ...utils.commons import user_login_data
 from ...utils.response_code import RET
 
+# 关注与取消关注
+@news_blue.route('/followed_user', methods=['GET', 'POST'])
+@user_login_data
+def followed_user():
+    # 判断用户是否登录
+    if not g.user:
+        return jsonify(error=RET.NODATA,errmsg="用户未登录")
+    # 获取参数
+    author_id=request.json.get("user_id")
+    action=request.json.get("action")
+
+    # 校验参数，为空校验
+    if not all([author_id,action]):
+        return jsonify(errno=RET.PARAMERR,errmsg="参数不全")
+    # 校验操作类型
+    if not action in ["follow","unfollow"]:
+        return jsonify(errno=RET.DATAERR,errmsg="参数类型有误")
+    # 根据作者编号取出作者对象，判断作者对象是否存在
+    try:
+        author=User.query.get(author_id)
+    except Exception as e:
+        current_app.logger.error(e)
+        return jsonify(errno=RET.DBERR,errmsg="获取作者失败")
+    if not author:return jsonify(errno=RET.NODATA,errmsg="该作者不存在")
+    # 根据操作类型，进行关注、取消关注
+    if action=="follow":
+        if not g.user in author.followers:
+            author.followers.append(g.user)
+    else:
+        if g.user in author.followers:
+            author.followers.remove(g.user)
+    # 返回相应
+    return jsonify(errno=RET.OK,errmsg="操作成功")
+
+
+
 @news_blue.route('/comment_like',methods=['POST'])
 @user_login_data
 def comment_like():
@@ -206,13 +242,21 @@ def news_detail(news_id):
             comm_dict["is_like"] =True
 
         comments_list.append(comm_dict)
+
+    # 判断登陆的用户是否关注了新闻
+    is_followed=False
+    if g.user and news.user:
+        if g.user in news.user.followers:
+            is_followed=True
+
     # 携带数据，渲染页面
     data={
         "news_info":news.to_dict(),
         "user_info":g.user.to_dict() if g.user else "",
         "news":click_news_list,
         "is_collected":is_collected,
-        "comments":comments_list
+        "comments":comments_list,
+        "is_followed":is_followed
     }
 
 

@@ -6,8 +6,7 @@ from redis import StrictRedis
 from flask_session import Session
 from flask_wtf.csrf import CSRFProtect,generate_csrf
 from config import config_dict
-from flask import Flask
-
+from flask import Flask, render_template, redirect
 
 #定义redis——store变量
 from info.utils.commons import hot_news_filter
@@ -64,6 +63,10 @@ def create_app(config_name):
     from info.modules.profile import profile_blue
     app.register_blueprint(profile_blue)
 
+    # 将管理员蓝图admin_blue注册到app中
+    from info.modules.admin import admin_blue
+    app.register_blueprint(admin_blue)
+
     # 将函数添加到系统默认的过滤器列表中
     app.add_template_filter(hot_news_filter,"my_filter")
 
@@ -76,7 +79,11 @@ def create_app(config_name):
         resp.set_cookie("csrf_token",csrf_token)
         return resp
 
-
+    # 使用errorhandler统一处理404异常信息
+    @app.errorhandler(404)
+    def page_not_found(e):
+        # return render_template("news/404.html")
+        return redirect("/404")
 
     print(app.url_map)
     return app

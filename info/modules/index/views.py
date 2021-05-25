@@ -20,11 +20,12 @@ def newslist():
     except Exception as e:
         page=1
         per_page=10
-    print(per_page)
+
     # 分页查询
+    filters = [News.status == 0]
     try:
         if cid=="1":
-            paginate = News.query.filter().order_by(News.create_time.desc()).paginate(page,per_page,False)
+            paginate = News.query.filter(*filters).order_by(News.create_time.desc()).paginate(page,per_page,False)
         else:
             paginate = News.query.filter(News.category_id == cid).order_by(News.create_time.desc()).paginate(page,per_page, False)
     except Exception as e:
@@ -95,3 +96,13 @@ def show_index():
 @index_blue.route('/favicon.ico')
 def get_web_logo():
     return current_app.send_static_file('news/favicon.ico')
+
+
+# 统一的返回404页面
+@index_blue.route('/404')
+@user_login_data
+def page_not_found():
+    data={
+        "user_info":g.user.to_dict() if g.user else ""
+    }
+    return render_template("news/404.html",data=data)

@@ -21,6 +21,8 @@ import json
 def logout():
     # 清除session信息
     session.pop("user_id",None)
+    session.pop("is_admin",None)
+
     # 返回响应
     return jsonify(errno=RET.OK,errmsg="退出成功")
 
